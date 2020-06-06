@@ -8,16 +8,158 @@
 * Author URI: 
 **/
 
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
 
+class SBConnect_Overview_Table extends WP_List_Table {
+  
+  /** Class constructor */
+  public function __construct() {
+
+  parent::__construct( [
+    'singular' => __( 'Artikel', 'sp' ), // singular name of the listed records
+    'plural'   => __( 'Artiklar', 'sp' ), // plural name of the listed records
+    'ajax'     => false // should this table support ajax?
+
+  ]);
+
+  }
+  
+  /**
+   * Retrieve customer’s data from the database
+   *
+   * @param int $per_page
+   * @param int $page_number
+   *
+   * @return mixed
+   */
+  public static function get_articles( $per_page = 25, $page_number = 1 ) {
+
+    global $wpdb;
+
+    $sql = "SELECT * FROM {$wpdb->prefix}articles";
+
+    if ( ! empty( $_REQUEST['orderby'] ) ) {
+      $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
+      $sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
+    }
+
+    $sql .= " LIMIT $per_page";
+
+    $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
+
+
+    $result = $wpdb->get_results( $sql, 'ARRAY_A' );
+
+    return $result;
+  }
+  
+  /**
+ * Prepare the items for the table to process
+ *
+ * @return Void
+ */
+  public function prepare_items()
+  {
+      $columns = $this->get_columns();
+      $hidden = $this->get_hidden_columns();
+      $sortable = $this->get_sortable_columns();
+
+      $perPage = 25;
+      $currentPage = $this->get_pagenum();
+
+      $items = self::get_articles($perPage, $currentPage);
+      $totalItems = count($items);
+
+      $this->set_pagination_args( array(
+          'total_items' => $totalItems,
+          'per_page'    => $perPage
+      ));
+
+      $this->_column_headers = array($columns, $hidden, $sortable);
+      $this->items = $items;
+  }
+  
+  /**
+   *  Associative array of columns
+   *
+   * @return array
+   */
+  function get_columns() {
+    $columns = [
+      'cb'      => '<input type="checkbox" />',
+      'article_name'    => 'Artikelnamn',
+      'article_id' => 'Artikelnummer'
+    ];
+
+    return $columns;
+  }
+  
+  /**
+   * Define which columns are hidden
+   *
+   * @return Array
+   */
+  public function get_hidden_columns()
+  {
+      return array();
+  }
+
+  /**
+   * Define the sortable columns
+   *
+   * @return Array
+   */
+  public function get_sortable_columns()
+  {
+      return array('article_name' => array('article_name', false));
+  }
+
+  /**
+    * Define what data to show on each column of the table
+    *
+    * @param  Array $item        Data
+    * @param  String $column_name - Current column name
+    *
+    * @return Mixed
+    */
+   public function column_default( $item, $column_name )
+   {
+       switch( $column_name ) {
+           case 'id':
+           case 'article_name':
+           case 'article_id':
+               return $item[ $column_name ];
+           default:
+               return print_r($item, true);
+       }
+   }
+
+}
 
 function sb_connect_install () {
-   global $wpdb;
+  global $wpdb;
 
-   $table_name = $wpdb->prefix . "articles"; 
+  $table_name = $wpdb->prefix . "articles";
+   
+  $charset_collate = $wpdb->get_charset_collate();
+
+  $sql = "CREATE TABLE $table_name (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    #time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    article_name text NOT NULL,
+    article_id tinytext NOT NULL,
+    PRIMARY KEY  (id)
+  ) $charset_collate;";
+
+  require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+  dbDelta($sql);
 }
 
 
 add_action('admin_menu', 'plugin_setup_menu');
+register_activation_hook( __FILE__, 'sb_connect_install' );
 
 function plugin_setup_menu() {
     add_menu_page( 'SBConnect', 
@@ -32,7 +174,14 @@ function plugin_setup_menu() {
 function init() {
    ?>
    <h1>SBConnect</h1>
-   <h2>WIP</h2>
+   
    <?php
+   
+   $overview_table = new SBConnect_Overview_Table();
+   $overview_table->prepare_items();
+   
+   $overview_table->views();
+	 $overview_table->display();
+   
+   
 }
-
