@@ -38,7 +38,7 @@ class SBConnect_Overview_Table extends WP_List_Table
     {
         global $wpdb;
 
-        $sql = "SELECT * FROM {$wpdb->prefix}sb_connect_articles";
+        $sql = "SELECT * FROM {$wpdb->prefix}sbconnect_articles";
 
         if (! empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
@@ -138,18 +138,18 @@ class SBConnect_Overview_Table extends WP_List_Table
     }
 }
 
-global $sb_connect_db_version;
-$sb_connect_db_version = '1.0';
+global $sbconnect_db_version;
+$sbconnect_db_version = '1.0';
 
-function sb_connect_install()
+function sbconnect_install()
 {
     global $wpdb;
-    global $sb_connect_db_version;
+    global $sbconnect_db_version;
 
     $charset_collate = $wpdb->get_charset_collate();
 
-    $articles_table_name = $wpdb->prefix . "sb_connect_articles";
-    $sites_table_name = $wpdb->prefix . "sb_connect_sites";
+    $articles_table_name = $wpdb->prefix . "sbconnect_articles";
+    $sites_table_name = $wpdb->prefix . "sbconnect_sites";
 
     $sql1 = "CREATE TABLE $articles_table_name (
       id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -174,7 +174,7 @@ function sb_connect_install()
 
 
 add_action('admin_menu', 'plugin_setup_menu');
-register_activation_hook(__FILE__, 'sb_connect_install');
+register_activation_hook(__FILE__, 'sbconnect_install');
 #register_deactivation_hook(__FILE__, 'sb_something');
 register_uninstall_hook(__FILE__, 'remove_db_tables');
 
@@ -209,14 +209,66 @@ function sbconnect_init()
 
 function sbconnect_add_new_article()
 {
-    ?>
-   <h1>Lägg till ny artikel</h1>
-   <?php
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        global $wpdb;
+        $wpdb->insert(
+            $wpdb->prefix . 'sbconnect_articles',
+            array(
+              'article_name' => htmlspecialchars($_POST["article_name"]),
+              'article_id' => htmlspecialchars($_POST["article_id"])
+            )
+        );
+        echo 'Added ' . htmlspecialchars($_POST["article_name"]) . '!';
+    // TODO redirect instead of echo
+    } else {
+        ?>
+       <h1>Lägg till ny artikel</h1>
+       
+       <form method="post">
+         <label style="display: block;">
+           Artikelnamn:
+           <input type="text" name="article_name" placeholder="Artikelnamn" />
+         </label>
+         <label style="display: block;">
+           Artikelnummer:
+           <input type="text" name="article_id" placeholder="Artikelnummer" />
+         </label>
+         <input type="submit" value="Lägg till" />
+       </form>
+       
+       <?php
+    }
 }
 
 function sbconnect_add_new_site()
 {
-    ?>
-   <h1>Lägg till ny butik</h1>
-   <?php
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        global $wpdb;
+        $wpdb->insert(
+            $wpdb->prefix . 'sbconnect_sites',
+            array(
+              'site_name' => htmlspecialchars($_POST["site_name"]),
+              'site_id' => htmlspecialchars($_POST["site_id"])
+            )
+        );
+        echo 'Added ' . htmlspecialchars($_POST["site_name"]) . '!';
+    // TODO redirect instead of echo
+    } else {
+        ?>
+       <h1>Lägg till ny butik</h1>
+       
+       <form method="post">
+         <label style="display: block;">
+           Butiksnamn:
+           <input type="text" name="site_name" placeholder="Butiksnamn" />
+         </label>
+         <label style="display: block;">
+           Butikens ID:
+           <input type="text" name="site_id" placeholder="Butikens ID" />
+         </label>
+         <input type="submit" value="Lägg till" />
+       </form>
+       
+       <?php
+    }
 }
