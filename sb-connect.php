@@ -198,13 +198,18 @@ function sbconnect_init()
 {
     ?>
    <h1>SBConnect</h1>
+   <h2>Artiklar</h2>
+   <p>Pluginet kan visa lagersaldo för följande artiklar</p>
    <a href="http://localhost/wp-admin/admin.php?page=sb-connect-new-article" class="page-title-action">Lägg till</a>
    <?php
    
     $overview_table = new SBConnect_Overview_Table();
     $overview_table->prepare_items();
     $overview_table->views();
-    $overview_table->display();
+    $overview_table->display(); ?>
+    <h2>Butiker</h2>
+    <p>Pluginet kommer för varje artikel att visa lagersaldo på följande butiker.</p>
+    <?php
 }
 
 function sbconnect_add_new_article()
