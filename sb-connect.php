@@ -38,7 +38,7 @@ class SBConnect_Overview_Table extends WP_List_Table
     {
         global $wpdb;
 
-        $sql = "SELECT * FROM {$wpdb->prefix}articles";
+        $sql = "SELECT * FROM {$wpdb->prefix}sb_connect_articles";
 
         if (! empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
@@ -138,30 +138,45 @@ class SBConnect_Overview_Table extends WP_List_Table
     }
 }
 
+global $sb_connect_db_version;
+$sb_connect_db_version = '1.0';
+
 function sb_connect_install()
 {
     global $wpdb;
+    global $sb_connect_db_version;
 
-    $table_name = $wpdb->prefix . "articles";
-   
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE $table_name (
-    id mediumint(9) NOT NULL AUTO_INCREMENT,
-    #time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-    article_name text NOT NULL,
-    article_id tinytext NOT NULL,
-    PRIMARY KEY  (id)
-  ) $charset_collate;";
+    $articles_table_name = $wpdb->prefix . "sb_connect_articles";
+    $sites_table_name = $wpdb->prefix . "sb_connect_sites";
+
+    $sql1 = "CREATE TABLE $articles_table_name (
+      id mediumint(9) NOT NULL AUTO_INCREMENT,
+      #time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+      article_name text NOT NULL,
+      article_id tinytext NOT NULL,
+      PRIMARY KEY  (id)
+    ) $charset_collate;";
+    
+    $sql2 = "CREATE TABLE $sites_table_name (
+      id mediumint(9) NOT NULL AUTO_INCREMENT,
+      #time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+      site_name text NOT NULL,
+      site_id tinytext NOT NULL,
+      PRIMARY KEY  (id)
+    ) $charset_collate;";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
+    dbDelta($sql1);
+    dbDelta($sql2);
 }
 
 
 add_action('admin_menu', 'plugin_setup_menu');
 register_activation_hook(__FILE__, 'sb_connect_install');
 #register_deactivation_hook(__FILE__, 'sb_something');
+register_uninstall_hook(__FILE__, 'remove_db_tables');
 
 function plugin_setup_menu()
 {
@@ -183,7 +198,7 @@ function init()
    
    <?php
    
-   $overview_table = new SBConnect_Overview_Table();
+    $overview_table = new SBConnect_Overview_Table();
     $overview_table->prepare_items();
    
     $overview_table->views();
