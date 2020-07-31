@@ -16,14 +16,14 @@ class SBConnect_Overview_Table extends WP_List_Table
 {
   
   /** Class constructor */
-    public function __construct()
+    public function __construct($what)
     {
         parent::__construct([
-    'singular' => __('Artikel', 'sp'), // singular name of the listed records
-    'plural'   => __('Artiklar', 'sp'), // plural name of the listed records
-    'ajax'     => false // should this table support ajax?
-
-  ]);
+          'singular' => __('Artikel', 'sp'), // singular name of the listed records
+          'plural'   => __('Artiklar', 'sp'), // plural name of the listed records
+          'ajax'     => false // should this table support ajax?
+        ]);
+        $this->$what = $what;
     }
   
     /**
@@ -34,9 +34,14 @@ class SBConnect_Overview_Table extends WP_List_Table
      *
      * @return mixed
      */
-    public static function get_articles($per_page = 25, $page_number = 1)
+    public function get_articles($per_page = 25, $page_number = 1)
     {
         global $wpdb;
+        
+        echo $this->$what;
+        echo $this->$what;
+        echo $this->$what;
+        echo $this->$what;
 
         $sql = "SELECT * FROM {$wpdb->prefix}sbconnect_articles";
 
@@ -56,10 +61,10 @@ class SBConnect_Overview_Table extends WP_List_Table
     }
   
     /**
- * Prepare the items for the table to process
- *
- * @return Void
- */
+     * Prepare the items for the table to process
+     *
+     * @return Void
+     */
     public function prepare_items()
     {
         $columns = $this->get_columns();
@@ -69,7 +74,7 @@ class SBConnect_Overview_Table extends WP_List_Table
         $perPage = 25;
         $currentPage = $this->get_pagenum();
 
-        $items = self::get_articles($perPage, $currentPage);
+        $items = $this->get_articles($perPage, $currentPage);
         $totalItems = count($items);
 
         $this->set_pagination_args(array(
@@ -89,10 +94,10 @@ class SBConnect_Overview_Table extends WP_List_Table
     public function get_columns()
     {
         $columns = [
-      'cb'      => '<input type="checkbox" />',
-      'article_name'    => 'Artikelnamn',
-      'article_id' => 'Artikelnummer'
-    ];
+          'cb' => '<input type="checkbox" />',
+          'article_name' => 'Artikelnamn',
+          'article_id' => 'Artikelnummer'
+        ];
 
         return $columns;
     }
@@ -194,6 +199,14 @@ function plugin_setup_menu()
     add_submenu_page('sb-connect', 'Lägg till butik', 'Lägg till butik', 'manage_options', 'sb-connect-new-site', 'sbconnect_add_new_site');
 }
 
+function show_table($what)
+{
+    $overview_table = new SBConnect_Overview_Table($what);
+    $overview_table->prepare_items();
+    $overview_table->views();
+    $overview_table->display();
+}
+
 function sbconnect_init()
 {
     ?>
@@ -201,14 +214,10 @@ function sbconnect_init()
    <h2>Artiklar</h2>
    <p>Pluginet kan visa lagersaldo för följande artiklar</p>
    <a href="http://localhost/wp-admin/admin.php?page=sb-connect-new-article" class="page-title-action">Lägg till</a>
-   <?php
-   
-    $overview_table = new SBConnect_Overview_Table();
-    $overview_table->prepare_items();
-    $overview_table->views();
-    $overview_table->display(); ?>
+   <?php show_table("articles"); ?>
     <h2>Butiker</h2>
     <p>Pluginet kommer för varje artikel att visa lagersaldo på följande butiker.</p>
+    <?php show_table("sites"); ?>
     <?php
 }
 
