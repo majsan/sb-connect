@@ -8,25 +8,27 @@
 * Author URI:
 **/
 
-//if (!defined('SBCONNECT_PLUGIN_URL')) {
+if (!defined('SBCONNECT_PLUGIN_URL')) {
     // TODO fix this
     //define('SBCONNECT_PLUGIN_URL', plugin_dir_url(__FILE__));
     define('SBCONNECT_PLUGIN_URL', 'wp-content/plugins/sb-connect/');
-//}
+}
 
+// TODO: rename
 function get_articles($table)
 {
     global $wpdb;
-
     $sql = "SELECT * FROM {$wpdb->prefix}{$table}";
-
-    if (! empty($_REQUEST['orderby'])) {
-        $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
-        $sql .= ! empty($_REQUEST['order']) ? ' ' . esc_sql($_REQUEST['order']) : ' ASC';
-    }
-
     $result = $wpdb->get_results($sql, 'ARRAY_A');
+    return $result;
+}
 
+// TODO: rename
+function remove_article($table, $id)
+{
+    global $wpdb;
+    $sql = "DELETE FROM {$wpdb->prefix}{$table} WHERE id={$id}";
+    $result = $wpdb->get_results($sql, 'ARRAY_A');
     return $result;
 }
 
@@ -86,7 +88,7 @@ function plugin_setup_menu()
     add_submenu_page('sb-connect', 'Lägg till butik', 'Lägg till butik', 'manage_options', 'sb-connect-new-site', 'sbconnect_add_new_site');
 }
 
-function display_rows($rows, $col1, $col2)
+function display_rows($rows, $table, $col1, $col2)
 {
     ?>
   <table>
@@ -101,24 +103,50 @@ function display_rows($rows, $col1, $col2)
        <?php foreach ($rows as $row) {
         echo "<tr>";
         echo "<td>{$row[$col1]}</td>";
-        echo "<td>{$row[$col2]}</td>";
-        echo "<td><img src='/" . constant("SBCONNECT_PLUGIN_URL") . "admin/images/icons8-trash-can.svg' alt='Delete icon'/></td>";
-        echo "</tr>";
+        echo "<td>{$row[$col2]}</td>"; ?>
+        
+        <td>
+          <form method="post" class="delete-form">
+            <input type="hidden" name="page" value="sb-connect">
+            <input type="hidden" name="table" value="<?php echo $table ?>">
+            <input type="hidden" name="id" value="<?php echo $row["id"] ?>">
+            <button type="submit" class="delete-row">
+              <img src="/<?php echo constant("SBCONNECT_PLUGIN_URL") . "admin/images/icons8-trash-can.svg" ?>"/>
+            </button>
+          </form>
+        </td>
+        </tr>
+        <?php
     } ?>
     </tbody>
   </table>
     <?php
 }
 
+?>
+<style>
+.delete-row {
+  border: 0;
+}
+.delete-form {
+  margin-block-end: 0em;
+}
+</style>
+
+<?php
+
 function show_table($table, $col1, $col2)
 {
     $rows = get_articles($table);
-    display_rows($rows, $col1, $col2);
+    display_rows($rows, $table, $col1, $col2);
 }
 
 function sbconnect_init()
 {
-    ?>
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // TODO: security, only admin can remove
+        remove_article($_POST["table"], $_POST["id"]);
+    } ?>
    <h1>SBConnect</h1>
    <h2>Artiklar</h2>
    <p>Pluginet kan visa lagersaldo för följande artiklar</p>
