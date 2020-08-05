@@ -12,135 +12,20 @@ if (! class_exists('WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
 
-class SBConnect_Overview_Table extends WP_List_Table
+function get_articles($table)
 {
-  
-  /** Class constructor */
-    public function __construct($what)
-    {
-        parent::__construct([
-          'singular' => __('Artikel', 'sp'), // singular name of the listed records
-          'plural'   => __('Artiklar', 'sp'), // plural name of the listed records
-          'ajax'     => false // should this table support ajax?
-        ]);
-        $this->$what = $what;
-    }
-  
-    /**
-     * Retrieve customer’s data from the database
-     *
-     * @param int $per_page
-     * @param int $page_number
-     *
-     * @return mixed
-     */
-    public function get_articles($per_page = 25, $page_number = 1)
-    {
-        global $wpdb;
-        
-        echo $this->$what;
-        echo $this->$what;
-        echo $this->$what;
-        echo $this->$what;
+    global $wpdb;
 
-        $sql = "SELECT * FROM {$wpdb->prefix}sbconnect_articles";
+    $sql = "SELECT * FROM {$wpdb->prefix}{$table}";
 
-        if (! empty($_REQUEST['orderby'])) {
-            $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
-            $sql .= ! empty($_REQUEST['order']) ? ' ' . esc_sql($_REQUEST['order']) : ' ASC';
-        }
-
-        $sql .= " LIMIT $per_page";
-
-        $sql .= ' OFFSET ' . ($page_number - 1) * $per_page;
-
-
-        $result = $wpdb->get_results($sql, 'ARRAY_A');
-
-        return $result;
-    }
-  
-    /**
-     * Prepare the items for the table to process
-     *
-     * @return Void
-     */
-    public function prepare_items()
-    {
-        $columns = $this->get_columns();
-        $hidden = $this->get_hidden_columns();
-        $sortable = $this->get_sortable_columns();
-
-        $perPage = 25;
-        $currentPage = $this->get_pagenum();
-
-        $items = $this->get_articles($perPage, $currentPage);
-        $totalItems = count($items);
-
-        $this->set_pagination_args(array(
-          'total_items' => $totalItems,
-          'per_page'    => $perPage
-      ));
-
-        $this->_column_headers = array($columns, $hidden, $sortable);
-        $this->items = $items;
-    }
-  
-    /**
-     *  Associative array of columns
-     *
-     * @return array
-     */
-    public function get_columns()
-    {
-        $columns = [
-          'cb' => '<input type="checkbox" />',
-          'article_name' => 'Artikelnamn',
-          'article_id' => 'Artikelnummer'
-        ];
-
-        return $columns;
-    }
-  
-    /**
-     * Define which columns are hidden
-     *
-     * @return Array
-     */
-    public function get_hidden_columns()
-    {
-        return array();
+    if (! empty($_REQUEST['orderby'])) {
+        $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
+        $sql .= ! empty($_REQUEST['order']) ? ' ' . esc_sql($_REQUEST['order']) : ' ASC';
     }
 
-    /**
-     * Define the sortable columns
-     *
-     * @return Array
-     */
-    public function get_sortable_columns()
-    {
-        return array('article_name' => array('article_name', false));
-    }
+    $result = $wpdb->get_results($sql, 'ARRAY_A');
 
-    /**
-      * Define what data to show on each column of the table
-      *
-      * @param  Array $item        Data
-      * @param  String $column_name - Current column name
-      *
-      * @return Mixed
-      */
-    public function column_default($item, $column_name)
-    {
-        switch ($column_name) {
-           case 'id':
-           case 'article_name':
-           case 'article_id':
-               return $item[ $column_name ];
-           default:
-               return print_r($item, true);
-       }
-    }
+    return $result;
 }
 
 global $sbconnect_db_version;
@@ -199,12 +84,32 @@ function plugin_setup_menu()
     add_submenu_page('sb-connect', 'Lägg till butik', 'Lägg till butik', 'manage_options', 'sb-connect-new-site', 'sbconnect_add_new_site');
 }
 
-function show_table($what)
+function display_rows($rows, $col1, $col2)
 {
-    $overview_table = new SBConnect_Overview_Table($what);
-    $overview_table->prepare_items();
-    $overview_table->views();
-    $overview_table->display();
+    ?>
+  <table>
+    <thead>
+        <tr>
+            <th><?php echo "{$col1}"; ?></th>
+            <th><?php echo "{$col2}"; ?></th>
+        </tr>
+    </thead>
+    <tbody>
+       <?php foreach ($rows as $row) {
+        echo "<tr>";
+        echo "<td>{$row[$col1]}</td>";
+        echo "<td>{$row[$col2]}</td>";
+        echo "</tr>";
+    } ?>
+    </tbody>
+  </table>
+    <?php
+}
+
+function show_table($table, $col1, $col2)
+{
+    $rows = get_articles($table);
+    display_rows($rows, $col1, $col2);
 }
 
 function sbconnect_init()
@@ -213,11 +118,12 @@ function sbconnect_init()
    <h1>SBConnect</h1>
    <h2>Artiklar</h2>
    <p>Pluginet kan visa lagersaldo för följande artiklar</p>
-   <a href="http://localhost/wp-admin/admin.php?page=sb-connect-new-article" class="page-title-action">Lägg till</a>
-   <?php show_table("articles"); ?>
+   <div style="margin-bottom: 15px;"><a href="http://localhost/wp-admin/admin.php?page=sb-connect-new-article" class="page-title-action">Lägg till</a></div>
+   <?php show_table("sbconnect_articles", "article_name", "article_id"); ?>
     <h2>Butiker</h2>
     <p>Pluginet kommer för varje artikel att visa lagersaldo på följande butiker.</p>
-    <?php show_table("sites"); ?>
+    <div style="margin-bottom: 15px;"><a href="http://localhost/wp-admin/admin.php?page=sb-connect-new-site" class="page-title-action">Lägg till</a></div>
+    <?php show_table("sbconnect_sites", "site_name", "site_id"); ?>
     <?php
 }
 
