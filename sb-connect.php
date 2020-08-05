@@ -8,9 +8,11 @@
 * Author URI:
 **/
 
-if (! class_exists('WP_List_Table')) {
-    require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
-}
+//if (!defined('SBCONNECT_PLUGIN_URL')) {
+    // TODO fix this
+    //define('SBCONNECT_PLUGIN_URL', plugin_dir_url(__FILE__));
+    define('SBCONNECT_PLUGIN_URL', 'wp-content/plugins/sb-connect/');
+//}
 
 function get_articles($table)
 {
@@ -92,6 +94,7 @@ function display_rows($rows, $col1, $col2)
         <tr>
             <th><?php echo "{$col1}"; ?></th>
             <th><?php echo "{$col2}"; ?></th>
+            <th>Ta bort</th>
         </tr>
     </thead>
     <tbody>
@@ -99,6 +102,7 @@ function display_rows($rows, $col1, $col2)
         echo "<tr>";
         echo "<td>{$row[$col1]}</td>";
         echo "<td>{$row[$col2]}</td>";
+        echo "<td><img src='/" . constant("SBCONNECT_PLUGIN_URL") . "admin/images/icons8-trash-can.svg' alt='Delete icon'/></td>";
         echo "</tr>";
     } ?>
     </tbody>
